@@ -1,0 +1,1153 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>لعبة XO الحديثة (إكس-أو)</title>
+  <style>
+    :root{
+      --bg1:#0b1020;
+      --bg2:#101a3a;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.12);
+      --text:#eef2ff;
+      --muted:#c7d2fe;
+      --shadow: 0 20px 60px rgba(0,0,0,.35);
+      --border: 1px solid rgba(255,255,255,.14);
+      --glow: 0 0 0 4px rgba(99,102,241,.18);
+      --x:#22c55e;
+      --o:#f97316;
+      --accent:#6366f1;
+      --danger:#ef4444;
+      --ok:#10b981;
+      --grid: rgba(255,255,255,.14);
+      --radius: 22px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(99,102,241,.35), transparent 60%),
+        radial-gradient(900px 500px at 90% 30%, rgba(34,197,94,.25), transparent 55%),
+        radial-gradient(900px 700px at 60% 110%, rgba(249,115,22,.22), transparent 55%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
+    }
+
+    .app{
+      width:min(980px, 100%);
+      padding: 18px 16px 82px;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+      position:relative;
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 14px 16px;
+      border: var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width: 180px;
+    }
+    .logo{
+      width:44px;height:44px;
+      border-radius: 14px;
+      display:grid;
+      place-items:center;
+      background: linear-gradient(135deg, rgba(99,102,241,.9), rgba(34,197,94,.65));
+      box-shadow: 0 10px 25px rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,.18);
+      position:relative;
+      overflow:hidden;
+    }
+    .logo::after{
+      content:"";
+      position:absolute; inset:-40%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+      transform: rotate(25deg);
+      animation: shine 4.2s infinite linear;
+    }
+    @keyframes shine{
+      0%{ transform: translateX(-40%) rotate(25deg); opacity:.0;}
+      20%{opacity:.55;}
+      50%{opacity:.25;}
+      100%{ transform: translateX(40%) rotate(25deg); opacity:0;}
+    }
+
+    .brand h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:.2px;
+      line-height:1.2;
+    }
+    .brand p{
+      margin:2px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      opacity:.95;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+
+    .pill{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      border: var(--border);
+      color: var(--text);
+      font-size: 13px;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(99,102,241,.18);
+    }
+
+    .btn{
+      appearance:none;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 700;
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(99,102,241,.95), rgba(99,102,241,.65));
+      box-shadow: 0 14px 30px rgba(0,0,0,.25);
+      cursor:pointer;
+      transition: transform .12s ease, filter .12s ease;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      outline:none;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn:hover{ filter: brightness(1.05); }
+    .btn.secondary{
+      background: rgba(255,255,255,.10);
+      border: var(--border);
+      box-shadow:none;
+      font-weight:700;
+    }
+    .btn.danger{
+      background: linear-gradient(135deg, rgba(239,68,68,.95), rgba(239,68,68,.65));
+    }
+    .btn:focus-visible{ box-shadow: var(--shadow), var(--glow); }
+
+    main{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:14px;
+      align-items:start;
+    }
+
+    @media (max-width: 880px){
+      main{ grid-template-columns: 1fr; }
+      .brand{ min-width:auto; }
+      .top-actions{ justify-content:flex-start; }
+    }
+
+    .card{
+      border: var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+      position:relative;
+    }
+    .card .inner{
+      padding: 16px;
+    }
+
+    .status{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      align-items:flex-start;
+    }
+    .status .block{
+      flex:1;
+      min-width: 210px;
+      padding: 12px;
+      border-radius: 18px;
+      border: var(--border);
+      background: rgba(255,255,255,.06);
+    }
+    .k{
+      font-size: 12px;
+      color: var(--muted);
+      opacity:.95;
+      margin:0 0 6px;
+    }
+    .v{
+      margin:0;
+      font-size: 14px;
+      font-weight: 800;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .badge{
+      padding: 6px 10px;
+      border-radius:999px;
+      border: var(--border);
+      background: rgba(255,255,255,.08);
+      font-size: 12px;
+      font-weight:900;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    .badge.x{ border-color: rgba(34,197,94,.35); }
+    .badge.o{ border-color: rgba(249,115,22,.35); }
+    .mark{
+      width:18px;height:18px;border-radius:6px;
+      display:grid;place-items:center;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.16);
+      font-weight: 1000;
+      font-size: 12px;
+    }
+    .mark.x{ color: var(--x); }
+    .mark.o{ color: var(--o); }
+
+    .board-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .board{
+      width:100%;
+      aspect-ratio: 1 / 1;
+      max-height: 520px;
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 10px;
+      border-radius: 22px;
+      border: var(--border);
+      background: rgba(255,255,255,.06);
+      position:relative;
+      overflow:hidden;
+    }
+    .cell{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      display:grid;
+      place-items:center;
+      font-size: clamp(42px, 8vw, 74px);
+      font-weight: 1000;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .10s ease, background .15s ease, border-color .15s ease;
+      position:relative;
+    }
+    .cell:hover{
+      background: rgba(255,255,255,.12);
+      border-color: rgba(255,255,255,.22);
+      transform: translateY(-1px);
+    }
+    .cell.disabled{
+      cursor:not-allowed;
+      opacity:.9;
+    }
+    .cell.win{
+      border-color: rgba(16,185,129,.55);
+      background: rgba(16,185,129,.14);
+      box-shadow: 0 0 0 4px rgba(16,185,129,.12) inset;
+    }
+    .xTxt{ color: var(--x); text-shadow: 0 10px 30px rgba(34,197,94,.22); }
+    .oTxt{ color: var(--o); text-shadow: 0 10px 30px rgba(249,115,22,.22); }
+
+    .hint{
+      font-size: 13px;
+      color: var(--muted);
+      opacity:.95;
+      margin:0;
+      line-height:1.6;
+    }
+
+    /* Right panel */
+    .panel h2{
+      margin:0 0 10px;
+      font-size: 16px;
+      letter-spacing:.2px;
+    }
+    .rows{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .mini{
+      flex:1;
+      min-width: 160px;
+      border-radius: 18px;
+      border: var(--border);
+      background: rgba(255,255,255,.06);
+      padding: 12px;
+    }
+    .mini .title{
+      margin:0 0 6px;
+      font-size: 12px;
+      color: var(--muted);
+      opacity:.95;
+    }
+    .mini .big{
+      margin:0;
+      font-size: 18px;
+      font-weight: 1000;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .spark{
+      width:10px;height:10px;border-radius:50%;
+      background: rgba(255,255,255,.35);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.10);
+    }
+    .spark.x{ background: var(--x); box-shadow: 0 0 0 4px rgba(34,197,94,.18); }
+    .spark.o{ background: var(--o); box-shadow: 0 0 0 4px rgba(249,115,22,.18); }
+
+    .toast{
+      margin-top:10px;
+      padding: 12px;
+      border-radius: 18px;
+      border: var(--border);
+      background: rgba(255,255,255,.07);
+      line-height:1.7;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .toast strong{ font-weight: 1000; }
+    .toast.good{
+      border-color: rgba(16,185,129,.28);
+      background: rgba(16,185,129,.10);
+    }
+    .toast.bad{
+      border-color: rgba(239,68,68,.25);
+      background: rgba(239,68,68,.08);
+    }
+
+    /* Start screen modal */
+    .overlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 50;
+    }
+    .modal{
+      width:min(860px, 100%);
+      border-radius: 26px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      box-shadow: 0 30px 90px rgba(0,0,0,.55);
+      backdrop-filter: blur(14px);
+      overflow:hidden;
+      position:relative;
+    }
+    .modal .content{
+      padding: 18px;
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 14px;
+      align-items:stretch;
+    }
+    @media (max-width: 880px){
+      .modal .content{ grid-template-columns: 1fr; }
+    }
+    .hero{
+      border-radius: 22px;
+      padding: 16px;
+      border: var(--border);
+      background:
+        radial-gradient(520px 260px at 20% 20%, rgba(99,102,241,.38), transparent 65%),
+        radial-gradient(520px 260px at 80% 60%, rgba(34,197,94,.28), transparent 62%),
+        rgba(255,255,255,.06);
+      min-height: 220px;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero h2{
+      margin:0 0 6px;
+      font-size: 20px;
+      letter-spacing:.2px;
+    }
+    .hero p{
+      margin:0;
+      color: var(--muted);
+      line-height:1.8;
+      font-size: 13px;
+      opacity:.95;
+    }
+    .hero .chips{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 12px;
+    }
+    .chip{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      font-size: 12px;
+      font-weight: 900;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .form{
+      border-radius: 22px;
+      border: var(--border);
+      background: rgba(255,255,255,.06);
+      padding: 16px;
+    }
+    .form h3{
+      margin:0 0 10px;
+      font-size: 16px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 520px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+    label{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    input[type="text"]{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.20);
+      color: var(--text);
+      outline:none;
+      transition: box-shadow .12s ease, border-color .12s ease;
+    }
+    input[type="text"]::placeholder{ color: rgba(199,210,254,.65); }
+    input[type="text"]:focus{
+      border-color: rgba(99,102,241,.55);
+      box-shadow: var(--glow);
+    }
+
+    .mode{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin: 10px 0 12px;
+    }
+    .toggle{
+      flex:1;
+      min-width: 180px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+      cursor:pointer;
+      user-select:none;
+      transition: transform .10s ease, border-color .12s ease, background .12s ease;
+    }
+    .toggle:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.10); }
+    .toggle.active{
+      border-color: rgba(99,102,241,.55);
+      background: rgba(99,102,241,.16);
+      box-shadow: 0 0 0 4px rgba(99,102,241,.12) inset;
+    }
+    .toggle .t-title{
+      font-weight: 1000;
+      font-size: 13px;
+      margin:0;
+    }
+    .toggle .t-sub{
+      margin:2px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      opacity:.95;
+    }
+    .toggle .icon{
+      width:36px;height:36px;border-radius: 14px;
+      display:grid;place-items:center;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      font-weight: 1000;
+    }
+
+    .form .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 10px;
+    }
+    .help{
+      margin:10px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height:1.7;
+      opacity:.95;
+    }
+
+    /* Footer fixed */
+    footer{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      z-index: 40;
+      padding: 10px 12px;
+      background: rgba(10,14,28,.72);
+      border-top: 1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(12px);
+    }
+    .footer-inner{
+      width:min(980px, 100%);
+      margin: 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      color: rgba(238,242,255,.95);
+      font-size: 12px;
+    }
+    .footer-inner b{ font-weight: 1000; }
+    .sep{ opacity:.55; }
+
+    /* Small utility */
+    .hide{ display:none !important; }
+    .sr-only{
+      position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <span style="font-weight:1000;">XO</span>
+        </div>
+        <div>
+          <h1>لعبة إكس-أو الحديثة</h1>
+          <p>اختر لاعب واحد أو لاعبين، وتنافسوا على 3×3 بتصميم عصري.</p>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="pill" id="modePill" title="وضع اللعب">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="modeText">الوضع: —</span>
+        </div>
+        <button class="btn secondary" id="btnNew">بدء لعبة جديدة</button>
+        <button class="btn danger" id="btnReset">إعادة ضبط</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Left: Board -->
+      <section class="card">
+        <div class="inner board-wrap">
+          <div class="status">
+            <div class="block">
+              <p class="k">الدور الحالي</p>
+              <p class="v" id="turnLine">—</p>
+            </div>
+            <div class="block">
+              <p class="k">النتيجة</p>
+              <p class="v" id="scoreLine">—</p>
+            </div>
+          </div>
+
+          <div class="board" id="board" aria-label="لوحة لعبة إكس-أو">
+            <!-- cells injected -->
+          </div>
+
+          <p class="hint" id="hint">
+            تلميح: في وضع اللاعب الواحد، الكمبيوتر يلعب بـ <b style="color:var(--o)">O</b> بعد دورك مباشرة.
+          </p>
+        </div>
+      </section>
+
+      <!-- Right: Panel -->
+      <aside class="card panel">
+        <div class="inner">
+          <h2>لوحة التحكم</h2>
+
+          <div class="rows">
+            <div class="row">
+              <div class="mini">
+                <p class="title">اللاعب (X)</p>
+                <p class="big"><span class="spark x" aria-hidden="true"></span> <span id="p1Name">—</span></p>
+              </div>
+              <div class="mini">
+                <p class="title">اللاعب (O)</p>
+                <p class="big"><span class="spark o" aria-hidden="true"></span> <span id="p2Name">—</span></p>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="mini">
+                <p class="title">الفائزون</p>
+                <p class="big" id="winsLine">—</p>
+              </div>
+              <div class="mini">
+                <p class="title">التعادل</p>
+                <p class="big" id="drawsLine">—</p>
+              </div>
+            </div>
+
+            <div class="toast" id="toast">
+              ابدأ من شاشة البداية لإدخال الأسماء واختيار وضع اللعب.
+            </div>
+
+            <div class="row">
+              <button class="btn" id="btnReplay" style="flex:1;">إعادة الجولة</button>
+              <button class="btn secondary" id="btnChangeNames" style="flex:1;">تغيير الأسماء</button>
+            </div>
+
+            <p class="hint">
+              قواعد سريعة: صف/عمود/قطر = فوز. إذا امتلأت اللوحة بدون فائز = تعادل.
+            </p>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Start Screen -->
+  <div class="overlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="شاشة البداية">
+    <div class="modal">
+      <div class="content">
+        <div class="hero">
+          <h2>جاهز تبدأ؟ 🎮</h2>
+          <p>
+            لعبة إكس-أو بتصميم حديث وسلس. اختر وضع لاعب واحد أو لاعبين،
+            واكتب أسماء اللاعبين، ثم اضغط "ابدأ اللعبة".
+          </p>
+          <div class="chips">
+            <div class="chip">✅ تعمل على الجوال والكمبيوتر</div>
+            <div class="chip">⚡ جولات سريعة</div>
+            <div class="chip">🤖 خصم كمبيوتر ذكي</div>
+          </div>
+        </div>
+
+        <div class="form">
+          <h3>إعدادات اللعبة</h3>
+
+          <div class="mode" aria-label="اختيار وضع اللعب">
+            <div class="toggle active" id="toggle1" tabindex="0" role="button" aria-pressed="true">
+              <div>
+                <p class="t-title">لاعب واحد</p>
+                <p class="t-sub">أنت ضد الكمبيوتر</p>
+              </div>
+              <div class="icon" aria-hidden="true">1</div>
+            </div>
+
+            <div class="toggle" id="toggle2" tabindex="0" role="button" aria-pressed="false">
+              <div>
+                <p class="t-title">لاعبان</p>
+                <p class="t-sub">تنافس مع صديقك</p>
+              </div>
+              <div class="icon" aria-hidden="true">2</div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <label>
+              اسم اللاعب الأول (X)
+              <input type="text" id="name1" maxlength="18" placeholder="مثال: عبدالله" />
+            </label>
+            <label>
+              اسم اللاعب الثاني (O)
+              <input type="text" id="name2" maxlength="18" placeholder="مثال: مودة / الكمبيوتر" />
+            </label>
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="btnStart" style="flex:1;">ابدأ اللعبة</button>
+            <button class="btn secondary" id="btnDemo" style="flex:1;">تعبئة أسماء سريعة</button>
+          </div>
+
+          <p class="help">
+            ملاحظة: في وضع اللاعب الواحد، اللاعب الثاني يصبح <b>الكمبيوتر</b> تلقائيًا إذا تركت اسمه فارغًا.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mandatory Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div>
+        <b>Student Name:</b> ABDULLAH HUSSAIN ABDULLAH ABDULSAMAD (عبدالله حسين عبدالله عبدالصمد)
+        <span class="sep"> | </span>
+        <b>Student ID:</b> 446006565
+      </div>
+      <div>
+        <b>Supervised by:</b> Mohammed Ahmed Jabali
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // =============================
+    // لعبة XO (إكس-أو) - ملف واحد
+    // =============================
+
+    // عناصر الواجهة
+    const startOverlay = document.getElementById("startOverlay");
+    const toggle1 = document.getElementById("toggle1");
+    const toggle2 = document.getElementById("toggle2");
+    const name1Input = document.getElementById("name1");
+    const name2Input = document.getElementById("name2");
+    const btnStart = document.getElementById("btnStart");
+    const btnDemo = document.getElementById("btnDemo");
+
+    const boardEl = document.getElementById("board");
+    const turnLine = document.getElementById("turnLine");
+    const scoreLine = document.getElementById("scoreLine");
+    const winsLine = document.getElementById("winsLine");
+    const drawsLine = document.getElementById("drawsLine");
+    const p1NameEl = document.getElementById("p1Name");
+    const p2NameEl = document.getElementById("p2Name");
+    const toast = document.getElementById("toast");
+    const modeText = document.getElementById("modeText");
+    const hint = document.getElementById("hint");
+
+    const btnReplay = document.getElementById("btnReplay");
+    const btnChangeNames = document.getElementById("btnChangeNames");
+    const btnNew = document.getElementById("btnNew");
+    const btnReset = document.getElementById("btnReset");
+
+    // حالة اللعبة
+    const state = {
+      mode: 1, // 1 = لاعب واحد، 2 = لاعبان
+      players: {
+        X: "—",
+        O: "—",
+      },
+      board: Array(9).fill(""),
+      turn: "X",
+      locked: false,
+      stats: {
+        X: 0,
+        O: 0,
+        draws: 0
+      }
+    };
+
+    // مصفوفات الفوز
+    const WIN_LINES = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    // ==============
+    // بناء اللوحة
+    // ==============
+    function buildBoard(){
+      boardEl.innerHTML = "";
+      for(let i=0;i<9;i++){
+        const btn = document.createElement("button");
+        btn.className = "cell";
+        btn.type = "button";
+        btn.setAttribute("aria-label", `خانة رقم ${i+1}`);
+        btn.dataset.idx = String(i);
+        btn.addEventListener("click", () => handleMove(i));
+        boardEl.appendChild(btn);
+      }
+    }
+
+    // ==============
+    // واجهة محدثة
+    // ==============
+    function render(){
+      // أسماء اللاعبين
+      p1NameEl.textContent = state.players.X;
+      p2NameEl.textContent = state.players.O;
+
+      // عرض الوضع
+      modeText.textContent = `الوضع: ${state.mode === 1 ? "لاعب واحد" : "لاعبان"}`;
+      hint.classList.toggle("hide", state.mode !== 1);
+
+      // عرض الدور الحالي
+      const currentName = state.turn === "X" ? state.players.X : state.players.O;
+      const badge = state.turn === "X"
+        ? `<span class="badge x"><span class="mark x">X</span> الدور لـ ${escapeHtml(currentName)}</span>`
+        : `<span class="badge o"><span class="mark o">O</span> الدور لـ ${escapeHtml(currentName)}</span>`;
+      turnLine.innerHTML = badge;
+
+      // عرض النتائج
+      scoreLine.innerHTML =
+        `<span class="badge x"><span class="mark x">X</span> ${state.stats.X}</span>
+         <span class="badge o"><span class="mark o">O</span> ${state.stats.O}</span>
+         <span class="badge"><span class="mark">≡</span> تعادل ${state.stats.draws}</span>`;
+
+      winsLine.textContent = `${state.players.X}: ${state.stats.X} | ${state.players.O}: ${state.stats.O}`;
+      drawsLine.textContent = `${state.stats.draws}`;
+
+      // تحديث خلايا اللوحة
+      const cells = boardEl.querySelectorAll(".cell");
+      cells.forEach((cell, i) => {
+        const v = state.board[i];
+        cell.textContent = v;
+        cell.classList.toggle("disabled", state.locked || v !== "");
+        cell.classList.remove("win");
+        cell.classList.remove("xTxt", "oTxt");
+        if(v === "X") cell.classList.add("xTxt");
+        if(v === "O") cell.classList.add("oTxt");
+      });
+    }
+
+    function setToast(message, kind = "normal"){
+      toast.classList.remove("good", "bad");
+      if(kind === "good") toast.classList.add("good");
+      if(kind === "bad") toast.classList.add("bad");
+      toast.innerHTML = message;
+    }
+
+    // ==============
+    // تحكم الوضع
+    // ==============
+    function setMode(mode){
+      state.mode = mode;
+      toggle1.classList.toggle("active", mode === 1);
+      toggle2.classList.toggle("active", mode === 2);
+      toggle1.setAttribute("aria-pressed", String(mode === 1));
+      toggle2.setAttribute("aria-pressed", String(mode === 2));
+
+      if(mode === 1){
+        name2Input.placeholder = "مثال: الكمبيوتر";
+      }else{
+        name2Input.placeholder = "مثال: مودة";
+      }
+    }
+
+    toggle1.addEventListener("click", () => setMode(1));
+    toggle2.addEventListener("click", () => setMode(2));
+    toggle1.addEventListener("keydown", (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); setMode(1);} });
+    toggle2.addEventListener("keydown", (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); setMode(2);} });
+
+    // ==============
+    // بدء اللعبة
+    // ==============
+    function startGameFromForm(){
+      const n1 = (name1Input.value || "").trim();
+      const n2 = (name2Input.value || "").trim();
+
+      state.players.X = n1 ? n1 : "اللاعب 1";
+      if(state.mode === 1){
+        state.players.O = n2 ? n2 : "الكمبيوتر";
+      }else{
+        state.players.O = n2 ? n2 : "اللاعب 2";
+      }
+
+      // إعادة الجولة (بدون تصفير الإحصائيات)
+      resetRound();
+
+      // إخفاء شاشة البداية
+      startOverlay.classList.add("hide");
+
+      setToast(
+        `ابدأنا! ${state.players.X} يلعب بـ <b style="color:var(--x)">X</b> و ${state.players.O} يلعب بـ <b style="color:var(--o)">O</b>.`,
+        "good"
+      );
+
+      render();
+    }
+
+    btnStart.addEventListener("click", startGameFromForm);
+
+    btnDemo.addEventListener("click", () => {
+      // أسماء عربية جاهزة للتجربة
+      name1Input.value = "عبدالله";
+      name2Input.value = state.mode === 1 ? "الكمبيوتر" : "مودة";
+      setToast("تمت تعبئة أسماء سريعة ✅ اضغط «ابدأ اللعبة».", "good");
+    });
+
+    // ==============
+    // منطق اللعب
+    // ==============
+    function handleMove(idx){
+      if(state.locked) return;
+      if(state.board[idx] !== "") return;
+
+      // في وضع لاعب واحد: يمنع لعب الكمبيوتر بالضغط
+      if(state.mode === 1 && state.turn === "O") return;
+
+      placeMark(idx, state.turn);
+
+      const res = evaluateBoard();
+      if(res.over){
+        endRound(res);
+        return;
+      }
+
+      // تبديل الدور
+      state.turn = state.turn === "X" ? "O" : "X";
+      render();
+
+      // دور الكمبيوتر
+      if(state.mode === 1 && state.turn === "O"){
+        state.locked = true;
+        render();
+        setTimeout(() => {
+          const aiIdx = computeBestMove();
+          placeMark(aiIdx, "O");
+          const res2 = evaluateBoard();
+          if(res2.over){
+            endRound(res2);
+            return;
+          }
+          state.turn = "X";
+          state.locked = false;
+          render();
+        }, 450);
+      }
+    }
+
+    function placeMark(idx, mark){
+      state.board[idx] = mark;
+      const cell = boardEl.querySelector(`.cell[data-idx="${idx}"]`);
+      if(cell){
+        cell.textContent = mark;
+        cell.classList.add(mark === "X" ? "xTxt" : "oTxt");
+      }
+    }
+
+    function evaluateBoard(){
+      // فحص فائز
+      for(const line of WIN_LINES){
+        const [a,b,c] = line;
+        const v = state.board[a];
+        if(v && v === state.board[b] && v === state.board[c]){
+          return { over:true, winner:v, line };
+        }
+      }
+      // فحص تعادل
+      const full = state.board.every(x => x !== "");
+      if(full) return { over:true, winner:null, line:null };
+      return { over:false, winner:null, line:null };
+    }
+
+    function endRound(result){
+      state.locked = true;
+
+      // تمييز خط الفوز
+      if(result.winner && result.line){
+        const cells = boardEl.querySelectorAll(".cell");
+        result.line.forEach(i => cells[i].classList.add("win"));
+      }
+
+      if(result.winner === "X"){
+        state.stats.X++;
+        setToast(`🎉 <strong>${escapeHtml(state.players.X)}</strong> فاز بـ <span style="color:var(--x);font-weight:1000;">X</span>!`, "good");
+      }else if(result.winner === "O"){
+        state.stats.O++;
+        setToast(`🔥 <strong>${escapeHtml(state.players.O)}</strong> فاز بـ <span style="color:var(--o);font-weight:1000;">O</span>!`, "good");
+      }else{
+        state.stats.draws++;
+        setToast(`🤝 تعادل! جولة جديدة؟`, "normal");
+      }
+
+      render();
+    }
+
+    function resetRound(){
+      state.board = Array(9).fill("");
+      state.turn = "X";
+      state.locked = false;
+
+      // تنظيف واجهة اللوحة
+      const cells = boardEl.querySelectorAll(".cell");
+      cells.forEach(c=>{
+        c.textContent = "";
+        c.classList.remove("win", "xTxt", "oTxt", "disabled");
+      });
+
+      render();
+    }
+
+    function fullReset(){
+      state.stats.X = 0;
+      state.stats.O = 0;
+      state.stats.draws = 0;
+      resetRound();
+      setToast("تمت إعادة ضبط الإحصائيات والجولة ✅", "good");
+    }
+
+    // ==========================
+    // ذكاء الكمبيوتر (Minimax)
+    // ==========================
+    // O = الكمبيوتر، X = اللاعب
+    // نستخدم minimax خفيف مع تفضيل للفوز السريع
+    function computeBestMove(){
+      const board = state.board.slice();
+      let bestScore = -Infinity;
+      let bestMove = null;
+
+      for(let i=0;i<9;i++){
+        if(board[i] === ""){
+          board[i] = "O";
+          const score = minimax(board, 0, false);
+          board[i] = "";
+          if(score > bestScore){
+            bestScore = score;
+            bestMove = i;
+          }
+        }
+      }
+
+      // fallback
+      if(bestMove === null){
+        const empties = state.board.map((v,i)=> v==="" ? i : null).filter(v=>v!==null);
+        return empties[Math.floor(Math.random()*empties.length)];
+      }
+      return bestMove;
+    }
+
+    function minimax(board, depth, isMax){
+      const evalRes = evaluateBoardStatic(board);
+      if(evalRes.over){
+        if(evalRes.winner === "O") return 10 - depth;
+        if(evalRes.winner === "X") return depth - 10;
+        return 0;
+      }
+
+      // تقليل التعقيد: عمق أقصى 8 كافي للـ 3x3
+      if(isMax){
+        let best = -Infinity;
+        for(let i=0;i<9;i++){
+          if(board[i] === ""){
+            board[i] = "O";
+            best = Math.max(best, minimax(board, depth+1, false));
+            board[i] = "";
+          }
+        }
+        return best;
+      }else{
+        let best = Infinity;
+        for(let i=0;i<9;i++){
+          if(board[i] === ""){
+            board[i] = "X";
+            best = Math.min(best, minimax(board, depth+1, true));
+            board[i] = "";
+          }
+        }
+        return best;
+      }
+    }
+
+    function evaluateBoardStatic(board){
+      for(const line of WIN_LINES){
+        const [a,b,c] = line;
+        const v = board[a];
+        if(v && v === board[b] && v === board[c]){
+          return { over:true, winner:v };
+        }
+      }
+      const full = board.every(x => x !== "");
+      if(full) return { over:true, winner:null };
+      return { over:false, winner:null };
+    }
+
+    // ==============
+    // أحداث الأزرار
+    // ==============
+    btnReplay.addEventListener("click", () => {
+      resetRound();
+      setToast("تمت إعادة الجولة ✅", "good");
+    });
+
+    btnChangeNames.addEventListener("click", () => {
+      startOverlay.classList.remove("hide");
+      setToast("عدّل الأسماء واختر الوضع ثم ابدأ اللعبة.", "normal");
+      // تحديث placeholders
+      setMode(state.mode);
+      name1Input.value = state.players.X === "اللاعب 1" ? "" : state.players.X;
+      if(state.mode === 1){
+        name2Input.value = (state.players.O === "الكمبيوتر") ? "" : state.players.O;
+      }else{
+        name2Input.value = state.players.O === "اللاعب 2" ? "" : state.players.O;
+      }
+    });
+
+    btnNew.addEventListener("click", () => {
+      resetRound();
+      setToast("لعبة جديدة بنفس الأسماء ✅", "good");
+    });
+
+    btnReset.addEventListener("click", () => {
+      fullReset();
+    });
+
+    // ==============
+    // أدوات مساعدة
+    // ==============
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // بدء
+    buildBoard();
+    setMode(1);
+    render();
+  </script>
+</body>
+</html>
